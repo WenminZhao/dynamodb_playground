@@ -11,27 +11,21 @@ output "dynamodb_table_arn" {
 
 # create iam role, the role will have read and write access to the dynamodb table;
 # the role will be assumable by the dax client
+# we already have this role defined in dynamodb module, so we will reuse it here
 
 # In AWS, a policy document is a formal specification of the permissions to be associated with an IAM entity (user, group, or role). 
 # It is written in JSON format and defines what actions are allowed or denied on which AWS resources.
-data "aws_iam_policy_document" "dynamodb_read_write_policy" {
+data "aws_iam_policy_document" "dax_read_write_policy" {
   statement {
     actions = [
-      "dynamodb:GetItem",
-      "dynamodb:BatchGetItem",
-      "dynamodb:Query",
-      "dynamodb:PutItem",
-      "dynamodb:UpdateItem",
-      "dynamodb:DeleteItem",
-      "dynamodb:Scan",
-      "dynamodb:BatchWriteItem",
-      "dynamodb:ConditionCheckItem"
+      "dax:*" 
     ]
 
     resources = [data.aws_dynamodb_table.existing.arn]
   }
 }
 
+# create a role to access dax
 data "aws_iam_policy_document" "dynamodb_assumable" {
   statement {
     actions = [
@@ -50,9 +44,9 @@ resource "aws_iam_role" "dax_assumable_role" {
 }
 
 resource "aws_iam_role_policy" "dynamodb_policy" {
-  name   = "FullAccessPolicyDynamoDB"
+  name   = "FullAccessPolicyDax"
   role   = aws_iam_role.dax_assumable_role.name
-  policy = data.aws_iam_policy_document.dynamodb_read_write_policy.json
+  policy = data.aws_iam_policy_document.dax_read_write_policy.json
 }
 
 resource "aws_dax_parameter_group" "this" {

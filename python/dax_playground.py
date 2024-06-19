@@ -106,6 +106,6 @@ def get_item_with_dynamodb():
 
 
 if __name__ == '__main__':
-    # write_data()
-    get_item_with_dax()
-    # get_item_with_dynamodb()
+    write_data()
+    # get_item_with_dax()
+    get_item_with_dynamodb()
