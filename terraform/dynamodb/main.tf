@@ -28,26 +28,40 @@ module "dynamodb_table" {
   }
 }
 
+
 # create a role for dynamodb
-data "aws_iam_policy_document" "dynamodb_read_write_policy" {
+data "aws_iam_policy_document" "dynamodb_read_write_policy_document" {
   statement {
     actions = [
-      "dynamodb:GetItem",
-      "dynamodb:BatchGetItem",
-      "dynamodb:Query",
-      "dynamodb:PutItem",
-      "dynamodb:UpdateItem",
-      "dynamodb:DeleteItem",
-      "dynamodb:Scan",
-      "dynamodb:BatchWriteItem",
-      "dynamodb:ConditionCheckItem"
+      "dynamodb:*"
     ]
-
+    effect = "Allow"
     resources = [module.dynamodb_table.dynamodb_table_arn]
   }
 }
 
+data "aws_iam_policy_document" "dynamodb_assumable_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["dynamodb.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_policy" "dynamodb_rw_policy" {
+  name = "dynamodb_rw_policy"
+  policy = data.aws_iam_policy_document.dynamodb_read_write_policy_document.json
+}
+
 resource "aws_iam_role" "dynamodbrw_role" {
   name = var.dynamodb_rw_access_role_name
-  assume_role_policy = data.aws_iam_policy
+  assume_role_policy = data.aws_iam_policy_document.dynamodb_assumable_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "dynamodb_rw_policy_attachment" {
+  role = aws_iam_role.dynamodbrw_role.name
+  policy_arn = aws_iam_policy.dynamodb_rw_policy.arn
 }
