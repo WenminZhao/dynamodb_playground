@@ -20,3 +20,7 @@ To test dax cluster, you need the following resources to be created.
    export DAX_TABLE_NAME=<The DyanmoDB table>
    ```
 5. Run `python dax_playground.py`
+
+# Troubleshoot
+1. Test connection: `nc -zv DAX_ENDPOINT 8111`
+2. AWS policy simulation: https://policysim.aws.amazon.com/home/index.jsp?#roles
