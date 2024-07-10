@@ -20,18 +20,23 @@ import time
 import amazondax
 import botocore.session
 import sys
+import boto3
 
 region = os.environ.get('AWS_DEFAULT_REGION', 'ap-southeast-1')
 table_name = os.environ.get('DAX_TABLE_NAME')
 dax_endpoint = os.environ.get('DAX_ENDPOINT')
+dax_iam_role = os.environ.get('DAX_IAM_ROLE')
 
 if not table_name:
     sys.exit("DAX_TABLE_NAME must be set in the environment")
 
-session = botocore.session.get_session()
-dynamodb = session.create_client('dynamodb', region_name=region) # low-level client
+sts_client = boto3.client('sts')
+assumed_role_object=sts_client.assume_role(RoleArn=dax_iam_role, RoleSessionName="AssumeRoleSession1")
+credentials=assumed_role_object['Credentials']
+dynamodb = boto3.client('dynamodb', region_name=region, aws_access_key_id=credentials['AccessKeyId'], aws_secret_access_key=credentials['SecretAccessKey'], aws_session_token=credentials['SessionToken'])
 if dax_endpoint:
-    dax = amazondax.AmazonDaxClient(session, region_name=region, endpoint_url=dax_endpoint)
+    dax = amazondax.AmazonDaxClient(region_name=region, endpoints=[dax_endpoint], aws_access_key_id=credentials['AccessKeyId'],
+                                    aws_secret_access_key=credentials['SecretAccessKey'], aws_session_token=credentials['SessionToken'])
 
 def write_data():
     some_data = 'X' * 1000
@@ -57,9 +62,9 @@ def get_item_with_dax():
     if not dax_endpoint:
         sys.exit("DAX_ENDPOINT must be set in the environment")
 
-    pk = 1
-    sk = 1
-    iterations = 1
+    pk = 10
+    sk = 10
+    iterations = 5
     
     start = time.time()
     for i in range(iterations):
@@ -107,5 +112,5 @@ def get_item_with_dynamodb():
 
 if __name__ == '__main__':
     write_data()
-    # get_item_with_dax()
+    get_item_with_dax()
     get_item_with_dynamodb()
